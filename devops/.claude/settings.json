@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Curl",
+      "WebSearch",
+      "Bash",
+      "Write",
+      "Edit"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // .tool_response.filePath // empty' | { read -r f; echo \"$f\" | grep -qE '.*/server/src/.*\\.ts$' && /Users/joseph/projects/nodejs/metro/server/node_modules/.bin/prettier --write \"$f\"; } 2>/dev/null || true",
+            "timeout": 30,
+            "statusMessage": "Formatting TypeScript..."
+          }
+        ]
+      }
+    ]
+  }
+}

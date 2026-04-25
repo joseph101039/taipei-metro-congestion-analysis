@@ -1,0 +1,7 @@
+line_code,line_name,train_type,cars,seated_per_car,standing_per_car,capacity_per_train,notes
+red,淡水信義線,C341,6,58,252,1860,新北投支線共用車型
+blue,板南線,C371,6,58,252,1860,
+green,松山新店線,C301,6,48,246,1764,小碧潭支線共用車型
+orange,中和新蘆線,C301,6,48,246,1764,蘆洲支線與主線直通運轉共用車型
+brown,文湖線,VAL256,2,30,100,260,橡膠輪胎系統；每列 2 節
+yellow,環狀線,C941,4,24,96,480,橡膠輪胎系統；每列 4 節

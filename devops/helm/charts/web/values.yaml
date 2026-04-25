@@ -1,0 +1,11 @@
+replicaCount: 1
+
+dev:
+  image: node:24-alpine
+  hostPath: ""
+
+service:
+  port: 5173
+
+domain:
+  web: metro.local

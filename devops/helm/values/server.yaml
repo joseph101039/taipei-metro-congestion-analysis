@@ -1,0 +1,15 @@
+dev:
+  image: node:24-alpine
+  hostPath: /Users/joseph/projects/nodejs/metro/server
+
+debug:
+  enabled: true
+  port: 9229
+  nodePort: 30229
+
+db:
+  host: mysql.infra.svc.cluster.local
+  port: "3306"
+  name: metro
+  user: user
+  password: "pass"

@@ -1,0 +1,25 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const database_1 = __importDefault(require("../config/database"));
+const LineRepository_1 = require("../repositories/LineRepository");
+const LineService_1 = require("../services/LineService");
+const LineController_1 = require("../controllers/LineController");
+const LineRouteRepository_1 = require("../repositories/LineRouteRepository");
+const LineRouteService_1 = require("../services/LineRouteService");
+const LineRouteController_1 = require("../controllers/LineRouteController");
+const router = (0, express_1.Router)();
+const repo = new LineRepository_1.LineRepository(database_1.default);
+const service = new LineService_1.LineService(repo);
+const controller = new LineController_1.LineController(service);
+const lineRouteRepo = new LineRouteRepository_1.LineRouteRepository(database_1.default);
+const lineRouteService = new LineRouteService_1.LineRouteService(lineRouteRepo);
+const lineRouteController = new LineRouteController_1.LineRouteController(lineRouteService);
+router.get('/', controller.getLines);
+router.get('/routes', lineRouteController.getAllRoutes);
+router.get('/:code/routes', lineRouteController.getRoutesByLineCode);
+router.get('/:code', controller.getLineByCode);
+exports.default = router;

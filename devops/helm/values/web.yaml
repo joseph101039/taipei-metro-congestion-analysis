@@ -1,0 +1,3 @@
+dev:
+  image: node:24-alpine
+  hostPath: /Users/joseph/projects/nodejs/metro/web

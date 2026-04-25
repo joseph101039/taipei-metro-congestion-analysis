@@ -1,0 +1,117 @@
+.congestion-clock {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(4px);
+  border-radius: 8px;
+  padding: 5px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.congestion-clock__date {
+  font-size: 14px;
+  font-weight: 500;
+  color: #555;
+  font-variant-numeric: tabular-nums;
+}
+
+.congestion-clock__time {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1d2330;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.03em;
+}
+
+.congestion-mode-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1000;
+  display: flex;
+  gap: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  pointer-events: all;
+}
+.congestion-mode-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+  pointer-events: all;
+}
+.congestion-mode-btn:first-child {
+  border-radius: 6px 0 0 6px;
+}
+.congestion-mode-btn:last-child {
+  border-radius: 0 6px 6px 0;
+  border-left: none;
+}
+.congestion-mode-btn--active {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.congestion-flow-note {
+  position: absolute;
+  top: 52px;
+  right: 12px;
+  z-index: 1000;
+  max-width: 360px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  color: #374151;
+  font-size: 12px;
+  line-height: 1.45;
+  pointer-events: all;
+}
+
+.congestion-flow-note__title {
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.congestion-flow-note__list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.congestion-rate-note__sub {
+  margin: 3px 0 0;
+  padding-left: 16px;
+  list-style: disc;
+  color: #6b7280;
+}
+
+.congestion-rate-loading {
+  position: absolute;
+  top: 52px;
+  right: 12px;
+  z-index: 1000;
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.9);
+  border: 1px solid #d1d5db;
+  font-size: 13px;
+  color: #555;
+  pointer-events: none;
+}
+

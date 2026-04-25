@@ -1,0 +1,55 @@
+.crc {
+  padding: 8px 0;
+}
+.crc__loading {
+  color: #aaa;
+  font-size: 0.85rem;
+  padding: 8px 12px;
+}
+.crc__line-group {
+  margin-bottom: 12px;
+}
+.crc__line-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+.crc__route {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+  min-width: 0;
+}
+.crc__route-id {
+  font-size: 0.75rem;
+  width: 32px;
+  flex-shrink: 0;
+  color: #ccc;
+}
+.crc__bar-track {
+  flex: 0 0 140px;
+  height: 14px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.crc__bar {
+  height: 100%;
+  border-radius: 3px;
+  min-width: 3px;
+}
+.crc__bar-label {
+  font-size: 0.7rem;
+  color: #ccc;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.crc__dist {
+  font-size: 0.7rem;
+  color: #777;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+

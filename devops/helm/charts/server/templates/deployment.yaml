@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metro-server
+  namespace: {{ .Values.namespace | default .Release.Namespace }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: metro-server
+  template:
+    metadata:
+      labels:
+        app: metro-server
+    spec:
+      containers:
+        - name: server
+          image: "{{ .Values.dev.image }}"
+          imagePullPolicy: IfNotPresent
+          {{- if .Values.debug.enabled }}
+          command: ["npm", "run", "dev:debug"]
+          env:
+            - name: DEBUG_PORT
+              value: "{{ .Values.debug.port }}"
+          {{- else }}
+          command: ["npm", "run", "dev"]
+          {{- end }}
+          workingDir: /app
+          ports:
+            - containerPort: 3000
+          {{- if .Values.debug.enabled }}
+            - containerPort: {{ .Values.debug.port }}
+              name: debug
+          {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            periodSeconds: 30
+            initialDelaySeconds: 10
+            failureThreshold: 3
+          envFrom:
+            - configMapRef:
+                name: metro-server-config
+            - secretRef:
+                name: metro-server-secret
+          volumeMounts:
+            - name: source
+              mountPath: /app
+            - name: node-modules
+              mountPath: /app/node_modules
+      volumes:
+        - name: source
+          hostPath:
+            path: {{ .Values.dev.hostPath }}
+        - name: node-modules
+          hostPath:
+            path: {{ .Values.dev.hostPath }}/node_modules

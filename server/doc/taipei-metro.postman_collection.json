@@ -1,0 +1,519 @@
+{
+  "info": {
+    "name": "Taipei Metro API",
+    "description": "REST API for the Taipei MRT (捷運) transit system.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Lines",
+      "item": [
+        {
+          "name": "List all lines",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get line by code - red",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines/red",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines", "red"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get line by code - blue",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines/blue",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines", "blue"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get line by code - green",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines/green",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines", "green"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get line by code - red_xinbeitou (branch)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines/red_xinbeitou",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines", "red_xinbeitou"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get line by code - not found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/lines/nonexistent",
+              "host": ["{{baseUrl}}"],
+              "path": ["lines", "nonexistent"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Stations",
+      "item": [
+        {
+          "name": "List all stations",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/stations",
+              "host": ["{{baseUrl}}"],
+              "path": ["stations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get station by code - R28 (淡水)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/stations/R28",
+              "host": ["{{baseUrl}}"],
+              "path": ["stations", "R28"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get station by code - BL12 (忠孝復興)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/stations/BL12",
+              "host": ["{{baseUrl}}"],
+              "path": ["stations", "BL12"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get station by code - not found",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/stations/XX99",
+              "host": ["{{baseUrl}}"],
+              "path": ["stations", "XX99"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Station Distances",
+      "item": [
+        {
+          "name": "List all station distances",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by from_code=R28",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?from_code=R28",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "from_code", "value": "R28" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by from_name=淡水",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?from_name=淡水",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "from_name", "value": "淡水" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by to_code=R27",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?to_code=R27",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "to_code", "value": "R27" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by to_name=紅樹林",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?to_name=紅樹林",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "to_name", "value": "紅樹林" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by from_code + to_code",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?from_code=R28&to_code=R27",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "from_code", "value": "R28" },
+                { "key": "to_code", "value": "R27" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter by unknown from_code (empty result)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/station-distances?from_code=XX99",
+              "host": ["{{baseUrl}}"],
+              "path": ["station-distances"],
+              "query": [
+                { "key": "from_code", "value": "XX99" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Ridership",
+      "item": [
+        {
+          "name": "Get hourly OD ridership - morning peak",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ridership?date=2026-03-01&hour=8",
+              "host": ["{{baseUrl}}"],
+              "path": ["ridership"],
+              "query": [
+                { "key": "date", "value": "2026-03-01" },
+                { "key": "hour", "value": "8" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get hourly OD ridership - evening peak",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ridership?date=2026-03-01&hour=18",
+              "host": ["{{baseUrl}}"],
+              "path": ["ridership"],
+              "query": [
+                { "key": "date", "value": "2026-03-01" },
+                { "key": "hour", "value": "18" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get hourly OD ridership - missing params (400)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ridership",
+              "host": ["{{baseUrl}}"],
+              "path": ["ridership"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Route (shortest distance)",
+      "item": [
+        {
+          "name": "淡水 → 頂埔 (1 transfer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?from_station_id=1&to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "from_station_id", "value": "1" },
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "淡水 → 新北投 (branch line)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?from_station_id=1&to_station_id=8",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "from_station_id", "value": "1" },
+                { "key": "to_station_id", "value": "8" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "南勢角 → 蘆洲 (through-service, no transfer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?from_station_id=72&to_station_id=97",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "from_station_id", "value": "72" },
+                { "key": "to_station_id", "value": "97" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "七張 → 小碧潭 (branch line)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?from_station_id=68&to_station_id=69",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "from_station_id", "value": "68" },
+                { "key": "to_station_id", "value": "69" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Missing from_station_id (400)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Station not found (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route?from_station_id=9999&to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route"],
+              "query": [
+                { "key": "from_station_id", "value": "9999" },
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Route Time (fastest travel time)",
+      "item": [
+        {
+          "name": "淡水 → 頂埔 (1 transfer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=1&to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "1" },
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "淡水 → 新北投 (branch line)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=1&to_station_id=8",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "1" },
+                { "key": "to_station_id", "value": "8" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "南勢角 → 蘆洲 (through-service, no transfer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=72&to_station_id=97",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "72" },
+                { "key": "to_station_id", "value": "97" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "七張 → 小碧潭 (branch line)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=68&to_station_id=69",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "68" },
+                { "key": "to_station_id", "value": "69" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "新北投 → 動物園 (branch origin, multi-transfer)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=8&to_station_id=98",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "8" },
+                { "key": "to_station_id", "value": "98" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Missing from_station_id (400)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Station not found (404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/route-time?from_station_id=9999&to_station_id=29",
+              "host": ["{{baseUrl}}"],
+              "path": ["route-time"],
+              "query": [
+                { "key": "from_station_id", "value": "9999" },
+                { "key": "to_station_id", "value": "29" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

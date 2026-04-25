@@ -1,0 +1,1698 @@
+openapi: 3.0.3
+info:
+  title: Taipei Metro API
+  description: |
+    REST API for the Taipei MRT (捷運) transit system.
+    Covers lines, stations, and station distances across 9 lines/branches:
+    淡水信義 (R), 板南 (BL), 松山新店 (G), 中和新蘆 (O), 文湖 (BR),
+    環狀線 (Y), 新北投支線 (R22A), 小碧潭支線 (G03A).
+  version: 1.2.0
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local development server
+
+paths:
+  /lines:
+    get:
+      summary: List all lines
+      description: |
+        Returns all metro lines and branch lines, each with color, name, and
+        the ordered segment list used for map rendering.
+        Branch lines include a parent_line_id pointing to the main line.
+      operationId: getLines
+      responses:
+        '200':
+          description: All lines with segments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineListResponse'
+              examples:
+                sample:
+                  summary: First two lines
+                  value:
+                    data:
+                      - id: 1
+                        code: red
+                        name: 淡水信義線
+                        color: '#E3002C'
+                        parent_line_id: null
+                        segments:
+                          - from: R28
+                            to: R27
+                          - from: R27
+                            to: R26
+                      - id: 7
+                        code: red_xinbeitou
+                        name: 新北投支線
+                        color: '#F3A5A8'
+                        parent_line_id: 1
+                        segments:
+                          - from: R22
+                            to: R22A
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /lines/{code}:
+    get:
+      summary: Get a single line
+      operationId: getLineByCode
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Line code (e.g. red, blue, red_xinbeitou)
+          schema:
+            type: string
+            example: red
+      responses:
+        '200':
+          description: Line with segments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LineDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /lines/routes:
+    get:
+      summary: List all TDX sub-routes across all lines
+      description: |
+        Returns every RouteID from every line in a single call, each with its
+        ordered station list. Useful for frontend bulk initialisation so that
+        all sub-route coverage data is available without per-line requests.
+      operationId: getAllLineRoutes
+      responses:
+        '200':
+          description: All sub-routes with stops.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LineRoute'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /lines/{code}/routes:
+    get:
+      summary: List TDX sub-routes for a line
+      description: |
+        Returns all RouteIDs that belong to the given line code, each with
+        their ordered station list (sequence + cumulative distance).
+        Source: TDX `/v2/Rail/Metro/StationOfRoute/TRTC`.
+
+        A single physical line has multiple RouteIDs covering different
+        station ranges (e.g. R-1 全線, R-2 副線, R-3 低頻端). Each RouteID
+        has a Direction (0 = outbound, 1 = inbound). The frontend can use
+        this to visualise which stations each sub-route covers.
+      operationId: getLineRoutes
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Line code, case-insensitive (e.g. R, BL, G, O, BR, Y)
+          schema:
+            type: string
+            example: R
+      responses:
+        '200':
+          description: List of sub-routes with stops.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LineRoute'
+              examples:
+                sample:
+                  summary: First route of red line
+                  value:
+                    - routeId: R-1
+                      lineCode: R
+                      direction: 0
+                      routeNameZh: 淡水－象山
+                      routeNameEn: Tamsui - Xiangshan
+                      stops:
+                        - stationCode: R28
+                          stationName: 淡水
+                          sequence: 1
+                          cumulativeDistanceKm: 0.000
+                        - stationCode: R27
+                          stationName: 紅樹林
+                          sequence: 2
+                          cumulativeDistanceKm: 1.540
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /stations:
+    get:
+      summary: List all stations
+      description: |
+        Returns all stations with WGS84 coordinates and their line info.
+        Interchange stations appear once under their primary line.
+      operationId: getStations
+      responses:
+        '200':
+          description: All stations.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationListResponse'
+              examples:
+                sample:
+                  summary: First station
+                  value:
+                    data:
+                      - id: 1
+                        code: R28
+                        name: 淡水
+                        alias: 淡水
+                        lat: 25.1679933
+                        lng: 121.4452583
+                        line_id: 1
+                        lat: 25.1679933
+                        lng: 121.4452583
+                        line_id: 1
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /station-distances:
+    get:
+      summary: List station-to-station distances
+      description: |
+        Returns all adjacent-station distance records.
+        Supports optional filtering by station code or name.
+      operationId: getStationDistances
+      parameters:
+        - name: from_code
+          in: query
+          schema: { type: string }
+          description: Filter by origin station code (e.g. R28)
+        - name: to_code
+          in: query
+          schema: { type: string }
+          description: Filter by destination station code
+        - name: from_name
+          in: query
+          schema: { type: string }
+          description: Filter by origin station name
+        - name: to_name
+          in: query
+          schema: { type: string }
+          description: Filter by destination station name
+      responses:
+        '200':
+          description: Distance records.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDistanceListResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ridership:
+    get:
+      summary: Get hourly OD ridership
+      description: |
+        Returns passenger counts between every origin–destination station pair
+        for the specified date and hour.
+
+        Response uses a **sparse map** keyed by origin station ID, then destination
+        station ID. Only pairs with at least one passenger are included, so the
+        payload stays small even when most OD combinations are empty.
+
+        ```
+        flows[origin_id][destination_id] = passengers
+        ```
+
+        To look up a specific pair: `data.flows["3"]["12"]` (or `0` if absent).
+        To iterate all flows: iterate the outer keys, then the inner keys.
+      operationId: getRidership
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Date in YYYY-MM-DD format
+          schema:
+            type: string
+            format: date
+            example: '2026-03-01'
+        - name: hour
+          in: query
+          required: true
+          description: Hour of day (0–23, local Taipei time)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 23
+            example: 8
+      responses:
+        '200':
+          description: Sparse OD flow map for the requested date and hour.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RidershipResponse'
+              examples:
+                sample:
+                  summary: Morning peak snippet
+                  value:
+                    date: '2026-03-01'
+                    hour: 8
+                    total_passengers: 48320
+                    flows:
+                      '1':
+                        '5': 312
+                        '12': 87
+                      '3':
+                        '7': 204
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /ridership/flows:
+    get:
+      summary: Get OD passenger flows for dynamic flow visualization
+      description: |
+        Returns a flat list of origin–destination passenger counts for the
+        specified date and hour. Designed for frontend dynamic flow rendering
+        (e.g. animated arcs on a metro map).
+
+        - Omit `from_station_id` and `to_station_id` to get **all** OD pairs.
+        - Supply `from_station_id` only → all destinations from that station.
+        - Supply `to_station_id` only → all origins arriving at that station.
+        - Supply both → the exact single OD pair.
+      operationId: getRidershipFlows
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Date in YYYY-MM-DD format
+          schema:
+            type: string
+            format: date
+            example: '2026-03-01'
+        - name: hour
+          in: query
+          required: true
+          description: Hour of day (0–23, local Taipei time)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 23
+            example: 8
+        - name: from_station_id
+          in: query
+          required: false
+          description: Filter by origin station ID
+          schema:
+            type: integer
+            example: 107
+        - name: to_station_id
+          in: query
+          required: false
+          description: Filter by destination station ID
+          schema:
+            type: integer
+            example: 114
+      responses:
+        '200':
+          description: Flat OD flow list for the requested parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RidershipFlowsResponse'
+              examples:
+                all_flows:
+                  summary: All flows at hour 8
+                  value:
+                    date: '2026-03-01'
+                    hour: 8
+                    total_passengers: 312
+                    flows:
+                      - origin_id: 107
+                        destination_id: 114
+                        passengers: 2
+                      - origin_id: 107
+                        destination_id: 115
+                        passengers: 2
+                single_pair:
+                  summary: Specific OD pair
+                  value:
+                    date: '2026-03-01'
+                    hour: 8
+                    total_passengers: 2
+                    flows:
+                      - origin_id: 107
+                        destination_id: 114
+                        passengers: 2
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /route:
+    get:
+      summary: Find shortest route between two stations
+      description: |
+        Returns the shortest-distance route between two stations using Dijkstra's
+        algorithm on a bidirectional weighted graph.
+
+        The response is a list of **segments** — one per metro line used. Each
+        segment contains the line, the boarding station, and the alighting station.
+        The frontend can derive all intermediate stops from the ordered station list
+        returned by `GET /lines`.
+
+        Transfer edges between interchange stations (same physical location, different
+        lines) carry zero distance cost. The algorithm therefore minimises total track
+        distance, which may route through more lines than the fewest-transfers path.
+      operationId: getRoute
+      parameters:
+        - name: from_station_id
+          in: query
+          required: true
+          description: Origin station ID
+          schema:
+            type: integer
+            example: 1
+        - name: to_station_id
+          in: query
+          required: true
+          description: Destination station ID
+          schema:
+            type: integer
+            example: 29
+      responses:
+        '200':
+          description: Shortest route with line segments.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteResponse'
+              examples:
+                one_transfer:
+                  summary: "淡水(id=1) → 頂埔(id=29), one transfer at 台北車站"
+                  value:
+                    from: { id: 1, code: R28, name: 淡水 }
+                    to: { id: 29, code: BL01, name: 頂埔 }
+                    total_distance_km: 37.04
+                    transfers: 1
+                    segments:
+                      - line: { id: 1, code: red, name: 淡水信義線, color: '#E3002C' }
+                        from: { id: 1, code: R28, name: 淡水 }
+                        to: { id: 20, code: R10, name: R台北車站 }
+                        distance_km: 20.88
+                      - line: { id: 2, code: blue, name: 板南線, color: '#0070BD' }
+                        from: { id: 40, code: BL12, name: BL台北車站 }
+                        to: { id: 29, code: BL01, name: 頂埔 }
+                        distance_km: 16.16
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /route-time:
+    get:
+      summary: Find fastest route (minimum travel time) between two stations
+      description: |
+        Returns the minimum-time route between two stations based on
+        precomputed official travel times from the `route_min_time` table.
+
+        The response mirrors `/route` but uses **travel time (minutes)** instead
+        of track distance. Each segment shows the line used, boarding/alighting
+        stations, and the travel time for that segment.
+
+        蘆洲支線 (orange_luzhou) shares through-service trains with 中和新蘆線,
+        so no transfer is counted at 大橋頭 for that branch.
+      operationId: getRouteTime
+      parameters:
+        - name: from_station_id
+          in: query
+          required: true
+          description: Origin station ID
+          schema:
+            type: integer
+            example: 1
+        - name: to_station_id
+          in: query
+          required: true
+          description: Destination station ID
+          schema:
+            type: integer
+            example: 29
+      responses:
+        '200':
+          description: Fastest route with line segments and travel times.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteTimeResponse'
+              examples:
+                one_transfer:
+                  summary: "淡水(id=1) → 頂埔(id=29)"
+                  value:
+                    from: { id: 1, code: R28, name: 淡水 }
+                    to: { id: 29, code: BL01, name: 頂埔 }
+                    total_travel_time_min: 50
+                    transfers: 1
+                    segments:
+                      - line: { id: 1, code: red, name: 淡水信義線, color: '#E3002C' }
+                        from: { id: 1, code: R28, name: 淡水 }
+                        to: { id: 20, code: R10, name: R台北車站 }
+                        travel_time_min: 28
+                      - line: { id: 2, code: blue, name: 板南線, color: '#0070BD' }
+                        from: { id: 40, code: BL12, name: BL台北車站 }
+                        to: { id: 29, code: BL01, name: 頂埔 }
+                        travel_time_min: 22
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /route-time/transfers:
+    get:
+      summary: Get all route transfer-station mappings
+      description: |
+        Returns the complete map of transfer station IDs for every A→B pair
+        that requires at least one line change, sourced from the `route_min_time` table.
+
+        The response is a **nested map** keyed by origin station ID → destination
+        station ID → ordered transfer station ID array. Only pairs with at least
+        one transfer are included; same-line (no-transfer) routes are omitted.
+
+        ```
+        transfers[from_id][to_id] = [transfer_station_id, ...]
+        ```
+
+        Designed for one-time bulk fetch so the frontend can build a local lookup
+        without per-request round-trips.
+      operationId: getRouteTimeTransfers
+      responses:
+        '200':
+          description: Full transfer station map.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RouteTimeTransfersResponse'
+              examples:
+                sample:
+                  summary: Snippet of transfer map
+                  value:
+                    transfers:
+                      '1':
+                        '29': [20, 40]
+                        '30': [20, 40]
+                      '2':
+                        '29': [20, 40]
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /population/village-boundaries:
+    get:
+      summary: Get village boundary GeoJSON with area
+      description: |
+        Returns a GeoJSON FeatureCollection of 雙北 (Taipei + New Taipei) village
+        boundaries with `area_km2` derived from the TWD97 projected shape area.
+        Geometry is sourced from 內政部國土測繪中心 (via ronnywang/twgeojson, 2010 version).
+        Response is cached for 24 hours (static geometry data).
+      operationId: getVillageBoundaries
+      responses:
+        '200':
+          description: GeoJSON FeatureCollection of village polygons.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VillageBoundaryResponse'
+              examples:
+                sample:
+                  summary: Two villages
+                  value:
+                    type: FeatureCollection
+                    features:
+                      - type: Feature
+                        geometry: { type: Polygon, coordinates: [[[]]] }
+                        properties:
+                          county: 臺北市
+                          district: 信義區
+                          village: 雅祥里
+                          area_km2: 0.1609
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /population/village-density:
+    get:
+      summary: Get village-level population data
+      description: |
+        Returns population counts for every 雙北 (Taipei + New Taipei) village
+        for the specified month. Omit `year_month` to get the latest available month.
+
+        Data is sourced from the `village_population` table, populated from official
+        monthly reports published by the Taipei and New Taipei civil affairs bureaus.
+      operationId: getVillageDensity
+      parameters:
+        - name: year_month
+          in: query
+          required: false
+          description: Target month in YYYYMM format (e.g. 202501). Defaults to latest available.
+          schema:
+            type: integer
+            example: 202501
+        - name: city
+          in: query
+          required: false
+          description: Filter by city (臺北市 or 新北市)
+          schema:
+            type: string
+            example: 臺北市
+      responses:
+        '200':
+          description: Village population records for the requested month.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VillagePopulationResponse'
+              examples:
+                sample:
+                  summary: Taipei January 2025 snippet
+                  value:
+                    data:
+                      - year_month: 202501
+                        city: 臺北市
+                        district: 松山區
+                        village: 莊敬里
+                        households: 2032
+                        population: 4823
+                        male: 2274
+                        female: 2549
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /stations/{code}:
+    get:
+      summary: Get a single station
+      operationId: getStationByCode
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Station code (e.g. R28, BL12)
+          schema:
+            type: string
+            example: R28
+      responses:
+        '200':
+          description: Station detail.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /line-capacities:
+    get:
+      summary: List train capacities per line
+      operationId: getLineCapacities
+      responses:
+        '200':
+          description: All line capacities.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LineCapacity'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /route-headways:
+    get:
+      summary: List headway schedules for all routes
+      operationId: getRouteHeadways
+      parameters:
+        - name: service_day
+          in: query
+          required: false
+          description: Filter by service day type
+          schema:
+            type: string
+            enum: ['平日', '假日']
+      responses:
+        '200':
+          description: All route headway records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RouteHeadway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /route-headways/{routeId}:
+    get:
+      summary: List headway schedules for a specific route
+      operationId: getRouteHeadwaysByRoute
+      parameters:
+        - name: routeId
+          in: path
+          required: true
+          schema:
+            type: string
+            example: R-1
+        - name: service_day
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: ['平日', '假日']
+      responses:
+        '200':
+          description: Headway records for the route.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RouteHeadway'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /segment-times:
+    get:
+      summary: List adjacent-station travel times
+      description: |
+        Returns travel times (minutes) for every pair of directly adjacent stations
+        on the same line. Data is derived from `route_min_time_v2.csv` and verified
+        to match all 128 adjacent-pair records exactly.
+
+        Use `?line=BR` to filter by line code (case-insensitive).
+
+        **Note**: These are same-line segment times only. For the minimum time
+        between any two stations (including cross-line transfers), use
+        `GET /route-time`.
+      operationId: getSegmentTimes
+      parameters:
+        - name: line
+          in: query
+          required: false
+          description: Filter by line code (BR, BL, G, O, R, Y)
+          schema:
+            type: string
+            example: BR
+      responses:
+        '200':
+          description: Adjacent-station segment travel times.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StationSegmentTime'
+              examples:
+                sample:
+                  summary: BR line first two segments
+                  value:
+                    - id: 1
+                      line_code: BR
+                      from_station_code: BR01
+                      to_station_code: BR02
+                      travel_time_min: 2
+                    - id: 2
+                      line_code: BR
+                      from_station_code: BR02
+                      to_station_code: BR03
+                      travel_time_min: 1
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /segment-times/{from}/{to}:
+    get:
+      summary: Get travel time for a specific adjacent-station segment
+      description: |
+        Returns the travel time (minutes) for the segment between two directly
+        adjacent stations. Query is **bidirectional**: `BR01/BR02` returns the
+        same record as `BR02/BR01`.
+      operationId: getSegmentTimeByPair
+      parameters:
+        - name: from
+          in: path
+          required: true
+          description: Origin station code (case-insensitive)
+          schema:
+            type: string
+            example: BR01
+        - name: to
+          in: path
+          required: true
+          description: Destination station code (case-insensitive)
+          schema:
+            type: string
+            example: BR02
+      responses:
+        '200':
+          description: Segment travel time record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StationSegmentTime'
+              examples:
+                sample:
+                  value:
+                    id: 1
+                    line_code: BR
+                    from_station_code: BR01
+                    to_station_code: BR02
+                    travel_time_min: 2
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /transfer-overheads:
+    get:
+      summary: List transfer station overhead times
+      description: |
+        Returns average transfer walking/waiting times (minutes) for all
+        interchange stations. Data is sourced from `transfer_overhead.csv`
+        with empirically measured sample counts.
+
+        Transfer overhead is the extra time a passenger spends walking between
+        platforms when changing lines at a station. It is separate from the
+        in-vehicle travel time provided by `/segment-times`.
+      operationId: getTransferOverheads
+      responses:
+        '200':
+          description: All transfer overhead records.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransferOverhead'
+              examples:
+                sample:
+                  summary: Two transfer stations
+                  value:
+                    - id: 1
+                      transfer_station_sid: 10
+                      station_codes: BR10/BL15
+                      station_name: 忠孝復興
+                      sample_count: 392
+                      avg_transfer_time_min: 4.5
+                    - id: 2
+                      transfer_station_sid: 51
+                      station_codes: R10/BL12
+                      station_name: 台北車站
+                      sample_count: 424
+                      avg_transfer_time_min: 3.3
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /transfer-overheads/{sid}:
+    get:
+      summary: Get transfer overhead for a specific interchange station
+      operationId: getTransferOverheadBySid
+      parameters:
+        - name: sid
+          in: path
+          required: true
+          description: Transfer station SID (numeric, e.g. 10 for 忠孝復興)
+          schema:
+            type: integer
+            example: 10
+      responses:
+        '200':
+          description: Transfer overhead record.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferOverhead'
+              examples:
+                sample:
+                  value:
+                    id: 2
+                    transfer_station_sid: 10
+                    station_codes: BR10/BL15
+                    station_name: 忠孝復興
+                    sample_count: 392
+                    avg_transfer_time_min: 4.5
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /congestion/station-load:
+    get:
+      summary: Estimate real-time station passenger load
+      description: |
+        Computes the expected number of passengers at each station for a given
+        date, hour, and minute using the Time-Slice Accumulation algorithm.
+
+        The calculation uses ridership OD data (uniform exit distribution within
+        each hour) combined with route_min_time travel durations and the full
+        path reconstruction (via transfer_ids + segment_times).
+
+        - If `minute` is provided, returns a single snapshot.
+        - If `minute` is omitted, returns all 60 minutes of the hour.
+      operationId: getCongestionStationLoad
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Date in YYYY-MM-DD format
+          schema:
+            type: string
+            format: date
+            example: '2026-03-31'
+        - name: hour
+          in: query
+          required: true
+          description: Hour of day (0–23)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 23
+            example: 8
+        - name: minute
+          in: query
+          required: false
+          description: Minute (0–59). Omit to get all 60 minutes.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 59
+            example: 30
+        - name: stations
+          in: query
+          required: false
+          description: Comma-separated station IDs to filter results
+          schema:
+            type: string
+            example: '1,2,3'
+      responses:
+        '200':
+          description: Station load estimates.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/StationLoadSnapshot'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/StationLoadSnapshot'
+              examples:
+                single_minute:
+                  summary: Single minute snapshot
+                  value:
+                    date: '2026-03-31'
+                    hour: 8
+                    minute: 30
+                    stations:
+                      - station_id: 37
+                        code: BL09
+                        estimated_load: 2176.8
+                      - station_id: 43
+                        code: BL15
+                        estimated_load: 1736.1
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /congestion/station-load-range:
+    get:
+      summary: Compact station load for a time range (animation)
+      description: |
+        Returns estimated passenger load in a compact columnar format.
+        Station codes are map keys, each mapping to an array of load values
+        indexed by minute. Designed for frontend playback animation.
+
+        Supports cross-day windows by setting `end_date` to a later day.
+
+        Response: `loads[stationCode][minuteIdx]` — null means negligible.
+      operationId: getCongestionStationLoadRange
+      parameters:
+        - name: date
+          in: query
+          required: true
+          description: Start date (YYYY-MM-DD)
+          schema:
+            type: string
+            format: date
+            example: '2026-03-31'
+        - name: end_date
+          in: query
+          required: false
+          description: |
+            End date (YYYY-MM-DD). Omit to use the same day as `date`.
+            Must be >= `date`.
+          schema:
+            type: string
+            format: date
+            example: '2026-04-01'
+        - name: start_hour
+          in: query
+          required: true
+          description: Start hour (0–23)
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 23
+            example: 7
+        - name: end_hour
+          in: query
+          required: true
+          description: |
+            End hour (0–23).
+            If `end_date` is omitted, must be >= `start_hour`.
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 23
+            example: 9
+        - name: stations
+          in: query
+          required: false
+          description: Comma-separated station codes to filter (e.g. BL09,R10)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Compact station load matrix.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompactLoadResult'
+              examples:
+                sample:
+                  summary: One hour sample
+                  value:
+                    date: '2026-03-31'
+                    end_date: '2026-03-31'
+                    start_hour: 8
+                    end_hour: 8
+                    minutes: [480, 481, 482]
+                    loads:
+                      BL09: [2300.2, 2290.1, 2285.0]
+                      BL15: [1736.1, 1740.3, null]
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+
+components:
+  responses:
+    BadRequest:
+      description: Invalid query parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: "'date' must be a valid date (YYYY-MM-DD) and 'hour' must be 0–23"
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Not found
+    InternalError:
+      description: Internal server error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: Internal server error
+
+  schemas:
+    LineSegment:
+      type: object
+      required: [from, to]
+      properties:
+        from:
+          type: string
+          description: Origin station code
+          example: R28
+        to:
+          type: string
+          description: Destination station code
+          example: R27
+
+    Line:
+      type: object
+      required: [id, code, name, color, segments]
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: red
+        name:
+          type: string
+          example: 淡水信義線
+        color:
+          type: string
+          description: Hex color code (Wikipedia official)
+          example: '#E3002C'
+        parent_line_id:
+          type: integer
+          nullable: true
+          description: Set for branch lines; null for main lines
+          example: null
+        segments:
+          type: array
+          description: Ordered adjacent-station pairs for map rendering
+          items:
+            $ref: '#/components/schemas/LineSegment'
+
+    LineRoute:
+      type: object
+      required: [routeId, lineCode, direction, stops]
+      properties:
+        routeId:
+          type: string
+          example: R-1
+        lineCode:
+          type: string
+          example: R
+        lineId:
+          type: integer
+          nullable: true
+          description: FK to lines.id
+          example: 1
+        direction:
+          type: integer
+          description: 0 = outbound, 1 = inbound (TDX Direction)
+          example: 0
+        routeNameZh:
+          type: string
+          nullable: true
+          example: 淡水－象山
+        routeNameEn:
+          type: string
+          nullable: true
+          example: Tamsui - Xiangshan
+        stops:
+          type: array
+          items:
+            $ref: '#/components/schemas/LineRouteStop'
+
+    LineRouteStop:
+      type: object
+      required: [stationCode, sequence, cumulativeDistanceKm]
+      properties:
+        stationCode:
+          type: string
+          example: R28
+        stationName:
+          type: string
+          nullable: true
+          example: 淡水
+        sequence:
+          type: integer
+          example: 1
+        cumulativeDistanceKm:
+          type: number
+          format: double
+          example: 0.000
+
+    LineListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Line'
+
+    LineDetailResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/Line'
+
+    StationDetail:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: R28
+        name:
+          type: string
+          example: 淡水
+        alias:
+          type: string
+          nullable: true
+          example: 淡水
+        lat:
+          type: number
+          format: double
+          description: WGS84 latitude
+          example: 25.1679933
+        lng:
+          type: number
+          format: double
+          description: WGS84 longitude
+          example: 121.4452583
+        line_id:
+          type: integer
+          nullable: true
+          example: 1
+
+    StationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationDetail'
+
+    StationDetailResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/StationDetail'
+
+    StationSummary:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: R28
+        name:
+          type: string
+          example: 淡水
+        alias:
+          type: string
+          nullable: true
+          example: 淡水
+
+    StationDistanceRecord:
+      type: object
+      required: [id, from_station, to_station, distance_km]
+      properties:
+        id:
+          type: integer
+          example: 1
+        from_station:
+          $ref: '#/components/schemas/StationSummary'
+        to_station:
+          $ref: '#/components/schemas/StationSummary'
+        distance_km:
+          type: number
+          format: float
+          example: 2.09
+
+    StationDistanceListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationDistanceRecord'
+
+    RidershipResponse:
+      type: object
+      required: [date, hour, total_passengers, flows]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-03-01'
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          example: 8
+        total_passengers:
+          type: integer
+          description: Sum of all passengers across every OD pair in this snapshot
+          example: 48320
+        flows:
+          type: object
+          description: >
+            Sparse map keyed by origin station ID (string) → destination station
+            ID (string) → passenger count. Only non-zero pairs are present.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+              minimum: 1
+          example:
+            '1':
+              '5': 312
+              '12': 87
+            '3':
+              '7': 204
+
+    RidershipFlowsResponse:
+      type: object
+      required: [date, hour, total_passengers, flows]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-03-01'
+        hour:
+          type: integer
+          minimum: 0
+          maximum: 23
+          example: 8
+        total_passengers:
+          type: integer
+          description: Sum of all passengers in the result set
+          example: 312
+        flows:
+          type: array
+          description: Flat list of OD passenger counts, suitable for flow visualization
+          items:
+            type: object
+            required: [origin_id, destination_id, passengers]
+            properties:
+              origin_id:
+                type: integer
+                example: 107
+              destination_id:
+                type: integer
+                example: 114
+              passengers:
+                type: integer
+                minimum: 1
+                example: 2
+
+    RouteStation:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: R28
+        name:
+          type: string
+          example: 淡水
+
+    RouteLine:
+      type: object
+      required: [id, code, name, color]
+      properties:
+        id:
+          type: integer
+          example: 1
+        code:
+          type: string
+          example: red
+        name:
+          type: string
+          example: 淡水信義線
+        color:
+          type: string
+          example: '#E3002C'
+
+    RouteSegment:
+      type: object
+      required: [line, from, to, distance_km]
+      properties:
+        line:
+          $ref: '#/components/schemas/RouteLine'
+        from:
+          $ref: '#/components/schemas/RouteStation'
+        to:
+          $ref: '#/components/schemas/RouteStation'
+        distance_km:
+          type: number
+          format: float
+          example: 20.88
+
+    RouteResponse:
+      type: object
+      required: [from, to, total_distance_km, transfers, segments]
+      properties:
+        from:
+          $ref: '#/components/schemas/RouteStation'
+        to:
+          $ref: '#/components/schemas/RouteStation'
+        total_distance_km:
+          type: number
+          format: float
+          example: 37.04
+        transfers:
+          type: integer
+          description: Number of line changes (segments − 1)
+          example: 1
+        segments:
+          type: array
+          description: One entry per metro line used, in travel order
+          items:
+            $ref: '#/components/schemas/RouteSegment'
+
+    RouteTimeSegment:
+      type: object
+      required: [line, from, to, travel_time_min]
+      properties:
+        line:
+          $ref: '#/components/schemas/RouteLine'
+        from:
+          $ref: '#/components/schemas/RouteStation'
+        to:
+          $ref: '#/components/schemas/RouteStation'
+        travel_time_min:
+          type: integer
+          description: Travel time in minutes for this segment
+          example: 28
+
+    RouteTimeResponse:
+      type: object
+      required: [from, to, total_travel_time_min, transfers, segments]
+      properties:
+        from:
+          $ref: '#/components/schemas/RouteStation'
+        to:
+          $ref: '#/components/schemas/RouteStation'
+        total_travel_time_min:
+          type: integer
+          description: Total travel time in minutes
+          example: 50
+        transfers:
+          type: integer
+          description: Number of line changes (segments − 1)
+          example: 1
+        segments:
+          type: array
+          description: One entry per metro line used, in travel order
+          items:
+            $ref: '#/components/schemas/RouteTimeSegment'
+
+    VillageBoundaryFeature:
+      type: object
+      required: [type, geometry, properties]
+      properties:
+        type:
+          type: string
+          example: Feature
+        geometry:
+          type: object
+          description: GeoJSON Polygon or MultiPolygon (WGS84)
+        properties:
+          type: object
+          required: [county, district, village, area_km2]
+          properties:
+            county:   { type: string, example: 臺北市 }
+            district: { type: string, example: 信義區 }
+            village:  { type: string, example: 雅祥里 }
+            area_km2: { type: number, format: float, example: 0.1609 }
+
+    VillageBoundaryResponse:
+      type: object
+      required: [type, features]
+      properties:
+        type:
+          type: string
+          example: FeatureCollection
+        features:
+          type: array
+          items:
+            $ref: '#/components/schemas/VillageBoundaryFeature'
+
+    VillagePopulationRecord:
+      type: object
+      required: [year_month, city, district, village, households, population, male, female]
+      properties:
+        year_month:  { type: integer, description: Data month (YYYYMM), example: 202501 }
+        city:        { type: string, example: 臺北市 }
+        district:    { type: string, example: 松山區 }
+        village:     { type: string, example: 莊敬里 }
+        households:  { type: integer, example: 2032 }
+        population:  { type: integer, example: 4823 }
+        male:        { type: integer, example: 2274 }
+        female:      { type: integer, example: 2549 }
+
+    VillagePopulationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/VillagePopulationRecord'
+
+    RouteTimeTransfersResponse:
+      type: object
+      required: [transfers]
+      properties:
+        transfers:
+          type: object
+          description: >
+            Nested map: origin station ID (string) → destination station ID (string)
+            → ordered transfer station ID array. Only pairs requiring at least one
+            transfer are present.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: array
+              items:
+                type: integer
+          example:
+            '1':
+              '29': [20, 40]
+              '30': [20, 40]
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: Internal server error
+
+    LineCapacity:
+      type: object
+      required: [id, line_code, line_name, train_type, cars, seated_per_car, standing_per_car, capacity_per_train]
+      properties:
+        id:
+          type: integer
+        line_code:
+          type: string
+          example: R
+        line_name:
+          type: string
+          example: 淡水信義線
+        train_type:
+          type: string
+          example: C341
+        cars:
+          type: integer
+          example: 6
+        seated_per_car:
+          type: integer
+          example: 58
+        standing_per_car:
+          type: integer
+          example: 252
+        capacity_per_train:
+          type: integer
+          example: 1860
+        notes:
+          type: string
+          nullable: true
+
+    RouteHeadway:
+      type: object
+      required: [id, line_code, route_id, service_day, peak_flag, start_time, end_time, min_headway_min, max_headway_min]
+      properties:
+        id:
+          type: integer
+        line_code:
+          type: string
+          example: R
+        route_id:
+          type: string
+          example: R-1
+        service_day:
+          type: string
+          example: 平日
+        peak_flag:
+          type: integer
+          description: 1=peak, 0=off-peak
+          example: 1
+        start_time:
+          type: string
+          example: '07:00'
+        end_time:
+          type: string
+          example: '09:00'
+        min_headway_min:
+          type: number
+          example: 6
+        max_headway_min:
+          type: number
+          example: 6
+
+    StationSegmentTime:
+      type: object
+      required: [id, line_code, from_station_code, to_station_code, travel_time_min]
+      properties:
+        id:
+          type: integer
+          example: 1
+        line_code:
+          type: string
+          description: Line code (BR/BL/G/O/R/Y)
+          example: BR
+        from_station_code:
+          type: string
+          description: Origin station code (ascending direction)
+          example: BR01
+        to_station_code:
+          type: string
+          description: Destination station code (ascending direction)
+          example: BR02
+        travel_time_min:
+          type: integer
+          description: Travel time in minutes between the two adjacent stations
+          example: 2
+
+    TransferOverhead:
+      type: object
+      required: [id, transfer_station_sid, station_codes, station_name, sample_count, avg_transfer_time_min]
+      properties:
+        id:
+          type: integer
+          example: 1
+        transfer_station_sid:
+          type: integer
+          description: Numeric SID matching the transfer_overhead.csv source data
+          example: 10
+        station_codes:
+          type: string
+          description: Slash-separated station codes at this interchange (e.g. BR10/BL15)
+          example: BR10/BL15
+        station_name:
+          type: string
+          description: Chinese station name
+          example: 忠孝復興
+        sample_count:
+          type: integer
+          description: Number of measured samples used to calculate the average
+          example: 392
+        avg_transfer_time_min:
+          type: number
+          format: float
+          description: Average transfer walking/waiting time in minutes
+          example: 4.5
+
+    StationLoadSnapshot:
+      type: object
+      required: [date, hour, minute, stations]
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-03-31'
+        hour:
+          type: integer
+          example: 8
+        minute:
+          type: integer
+          example: 30
+        stations:
+          type: array
+          items:
+            $ref: '#/components/schemas/StationLoadEntry'
+
+    StationLoadEntry:
+      type: object
+      required: [station_id, code, estimated_load]
+      properties:
+        station_id:
+          type: integer
+          example: 37
+        code:
+          type: string
+          example: BL09
+        estimated_load:
+          type: number
+          format: float
+          description: Expected passenger count (float, rounded to 1 decimal)
+          example: 2176.8
+
+    CompactLoadResult:
+      type: object
+      required: [date, end_date, start_hour, end_hour, minutes, loads]
+      properties:
+        date:
+          type: string
+          format: date
+          description: Start date
+          example: '2026-03-31'
+        end_date:
+          type: string
+          format: date
+          description: End date
+          example: '2026-04-01'
+        start_hour:
+          type: integer
+          example: 8
+        end_hour:
+          type: integer
+          example: 8
+        minutes:
+          type: array
+          items:
+            type: integer
+          example:
+            - 480
+            - 481
+            - 482
+        loads:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: number
+              format: float
+          example:
+            BL09: [2300.2, 2290.1, 2285.0]
+            BL15: [1736.1, 1740.3, null]

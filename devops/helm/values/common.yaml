@@ -1,0 +1,5 @@
+namespace: metro
+
+domain:
+  web: metro.local
+  api: api.metro.local

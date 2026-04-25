@@ -1,0 +1,21 @@
+repositories: []
+
+helmDefaults:
+  createNamespace: true
+  wait: true
+  timeout: 600
+
+releases:
+  - name: server
+    namespace: metro
+    chart: ./charts/server
+    values:
+      - values/common.yaml
+      - values/server.yaml
+
+  - name: web
+    namespace: metro
+    chart: ./charts/web
+    values:
+      - values/common.yaml
+      - values/web.yaml

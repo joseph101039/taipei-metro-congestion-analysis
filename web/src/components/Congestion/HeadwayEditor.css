@@ -1,0 +1,147 @@
+.hw-editor {
+  margin-top: 12px;
+  border-top: 1px solid #2e2e2e;
+  padding-top: 10px;
+}
+
+.hw-editor__loading {
+  color: #777;
+  font-size: 0.78rem;
+  padding: 8px 0;
+}
+
+.hw-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.hw-editor__title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ddd;
+}
+
+.hw-editor__day-toggle {
+  display: flex;
+  gap: 4px;
+}
+
+.hw-editor__day-btn {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  color: #aaa;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.hw-editor__day-btn--active {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #4a90d9;
+}
+
+.hw-editor__lines {
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.hw-editor__line {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #222;
+}
+
+.hw-editor__line:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.hw-editor__line-hd {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.hw-editor__line-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hw-editor__line-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #ddd;
+}
+
+.hw-editor__cap-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.hw-editor__cap-label {
+  font-size: 0.68rem;
+  color: #888;
+  white-space: nowrap;
+}
+
+.hw-editor__cap-input {
+  width: 46px;
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 3px;
+  color: #eee;
+  font-size: 0.7rem;
+  padding: 2px 4px;
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.hw-editor__cap-input::-webkit-inner-spin-button,
+.hw-editor__cap-input::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+
+.hw-editor__cap-input:focus {
+  outline: none;
+  border-color: #4a90d9;
+}
+
+.hw-editor__cap-total {
+  font-size: 0.7rem;
+  color: #7cb342;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hw-editor__route-block {
+  margin-top: 6px;
+}
+
+.hw-editor__route-id {
+  font-size: 0.72rem;
+  color: #999;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.hw-editor__chart-wrap {
+  margin-top: 2px;
+}
+
+.hw-editor__chart-label {
+  font-size: 0.68rem;
+  color: #666;
+  margin-bottom: 2px;
+}
